@@ -25,4 +25,6 @@ pub struct Args {
 pub enum Command {
     /// Day 1 solution [https://adventofcode.com/2024/day/1]
     Day1,
+    /// Day 2 solution [https://adventofcode.com/2024/day/2]
+    Day2,
 }

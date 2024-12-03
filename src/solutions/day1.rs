@@ -4,23 +4,20 @@ use std::{
     io,
 };
 
-use tracing::{debug, info, instrument, trace, Level};
+use tracing::{debug, instrument, trace};
 
 use crate::error::{AppError, Result};
 
 pub fn solve(second: bool, line_reader: impl Iterator<Item = io::Result<String>>) -> Result<()> {
     if second {
-        let similarity_score = calc_similarity_score(line_reader);
-        info!(similarity_score = ?similarity_score, "Similarity score calculated");
+        calc_similarity_score(line_reader)?;
     } else {
-        let distance = calc_distance(line_reader);
-        info!(distance = ?distance, "Distance calculated");
+        calc_distance(line_reader)?;
     }
-
     Ok(())
 }
 
-#[instrument(skip_all, ret(level = Level::DEBUG))]
+#[instrument(skip_all, ret)]
 fn calc_distance(line_reader: impl Iterator<Item = io::Result<String>>) -> Result<usize> {
     let mut left_heap = BinaryHeap::new();
     let mut right_heap = BinaryHeap::new();
@@ -51,7 +48,7 @@ fn calc_distance(line_reader: impl Iterator<Item = io::Result<String>>) -> Resul
     Ok(distance)
 }
 
-#[instrument(skip_all, ret(level = Level::DEBUG))]
+#[instrument(skip_all, ret)]
 fn calc_similarity_score(line_reader: impl Iterator<Item = io::Result<String>>) -> Result<usize> {
     let mut left_map = HashMap::new();
     let mut right_map = HashMap::new();
@@ -88,29 +85,25 @@ mod test {
 
     #[test]
     fn validate_one_star_example() {
-        let data = vec![
-            Ok("3   4".to_string()),
-            Ok("4   3".to_string()),
-            Ok("2   5".to_string()),
-            Ok("1   3".to_string()),
-            Ok("3   9".to_string()),
-            Ok("3   3".to_string()),
-        ];
-        let res = calc_distance(data.into_iter());
+        let data = r#"3   4
+            4   3
+            2   5
+            1   3
+            3   9
+            3   3"#;
+        let res = calc_distance(data.lines().map(|s| s.trim().to_string()).map(Ok));
         assert_eq!(res.unwrap(), 11);
     }
 
     #[test]
     fn validate_second_star_example() {
-        let data = vec![
-            Ok("3   4".to_string()),
-            Ok("4   3".to_string()),
-            Ok("2   5".to_string()),
-            Ok("1   3".to_string()),
-            Ok("3   9".to_string()),
-            Ok("3   3".to_string()),
-        ];
-        let res = calc_similarity_score(data.into_iter());
+        let data = r#"3   4
+            4   3
+            2   5
+            1   3
+            3   9
+            3   3"#;
+        let res = calc_similarity_score(data.lines().map(|s| s.trim().to_string()).map(Ok));
         assert_eq!(res.unwrap(), 31);
     }
 }

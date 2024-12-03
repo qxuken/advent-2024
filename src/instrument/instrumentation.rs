@@ -11,6 +11,8 @@ use tracing_subscriber::{
 
 use super::logger::Logger;
 
+static OUT: fn() -> std::io::Stderr = std::io::stderr;
+
 #[derive(clap::Args, Debug, Default, Clone)]
 pub struct Instrumentation {
     /// Enable debug logs, -vv for trace
@@ -101,8 +103,8 @@ impl Instrumentation {
         S: Subscriber + for<'span> LookupSpan<'span>,
     {
         tracing_subscriber::fmt::Layer::new()
-            .with_ansi(std::io::stdout().is_terminal())
-            .with_writer(std::io::stdout)
+            .with_ansi(OUT().is_terminal())
+            .with_writer(OUT)
     }
 
     pub fn fmt_layer_pretty<S>(&self) -> impl Layer<S>
@@ -110,8 +112,8 @@ impl Instrumentation {
         S: Subscriber + for<'span> LookupSpan<'span>,
     {
         tracing_subscriber::fmt::Layer::new()
-            .with_ansi(std::io::stdout().is_terminal())
-            .with_writer(std::io::stdout)
+            .with_ansi(OUT().is_terminal())
+            .with_writer(OUT)
             .pretty()
     }
 
@@ -120,8 +122,8 @@ impl Instrumentation {
         S: Subscriber + for<'span> LookupSpan<'span>,
     {
         tracing_subscriber::fmt::Layer::new()
-            .with_ansi(std::io::stdout().is_terminal())
-            .with_writer(std::io::stdout)
+            .with_ansi(OUT().is_terminal())
+            .with_writer(OUT)
             .json()
     }
 
@@ -130,8 +132,8 @@ impl Instrumentation {
         S: Subscriber + for<'span> LookupSpan<'span>,
     {
         tracing_subscriber::fmt::Layer::new()
-            .with_ansi(std::io::stdout().is_terminal())
-            .with_writer(std::io::stdout)
+            .with_ansi(OUT().is_terminal())
+            .with_writer(OUT)
             .compact()
             .without_time()
             .with_target(false)
@@ -140,4 +142,16 @@ impl Instrumentation {
             .with_file(false)
             .with_line_number(false)
     }
+}
+
+#[cfg(test)]
+#[ctor::ctor]
+fn init() {
+    Instrumentation {
+        verbose: 2,
+        logger: Default::default(),
+        log_directives: vec![],
+    }
+    .setup(&[])
+    .unwrap();
 }
