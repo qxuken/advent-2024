@@ -27,4 +27,6 @@ pub enum Command {
     Day1,
     /// Day 2 solution [https://adventofcode.com/2024/day/2]
     Day2,
+    /// Day 3 solution [https://adventofcode.com/2024/day/3]
+    Day3,
 }
