@@ -41,6 +41,10 @@ fn main() -> error::Result<()> {
             debug!("Day3 solution requested");
             solutions::day3::solve(args.second_star, data_reader.lines())?;
         }
+        Command::Day4 => {
+            debug!("Day4 solution requested");
+            solutions::day4::solve(args.second_star, data_reader.lines())?;
+        }
     }
 
     Ok(())
