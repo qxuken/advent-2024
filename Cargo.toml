@@ -2,11 +2,13 @@
 name = "advent_2024"
 version = "0.1.0"
 edition = "2021"
+default-run = "advent_2024"
 
 [dependencies]
 clap = { version = "4.5.21", features = ["derive", "cargo"] }
 color-eyre = { version = "0.6.3", features = ["issue-url", "url"] }
 ctor = "0.2.9"
+rayon = "1.10.0"
 serde = { version = "1.0.215", features = ["derive"] }
 strum = { version = "0.26.3", features = ["derive"] }
 thiserror = "2.0.3"

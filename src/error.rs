@@ -27,6 +27,9 @@ pub enum AppError {
     #[error("Data File Parsing Error: {0}")]
     DataParse(String),
 
+    #[error("Error during execution: {0}")]
+    LogicalError(String),
+
     #[error("Internal error: {0}")]
     Other(String),
 }

@@ -3,16 +3,12 @@ use std::{
     io::{BufRead, BufReader},
 };
 
-use crate::cli::{Args, Command};
+use advent_2024::{
+    cli::{Args, Command},
+    constants, error, solutions, utils,
+};
 use clap::Parser;
 use tracing::{debug, trace};
-
-mod cli;
-mod constants;
-mod error;
-mod instrument;
-mod solutions;
-mod utils;
 
 fn main() -> error::Result<()> {
     utils::color_eyre::setup()?;
@@ -23,7 +19,7 @@ fn main() -> error::Result<()> {
 
     let data_file = match File::open(args.data_file) {
         Ok(file) => file,
-        Err(err) => return Err(error::AppError::DataOpen(err.to_string()).into()),
+        Err(err) => return Err(advent_2024::error::AppError::DataOpen(err.to_string()).into()),
     };
     let data_reader = BufReader::new(&data_file);
     trace!(file = ?data_file, reader = ?data_reader, "Data file reader initialized");
@@ -48,6 +44,10 @@ fn main() -> error::Result<()> {
         Command::Day5 => {
             debug!("Day5 solution requested");
             solutions::day5::solve(args.second_star, data_reader.lines())?;
+        }
+        Command::Day6 => {
+            debug!("Day6 solution requested");
+            solutions::day6::solve(args.second_star, data_reader.lines())?;
         }
     }
 
