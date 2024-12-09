@@ -6,7 +6,7 @@ use tracing::{instrument, Level};
 
 use crate::error::{AppError, Result};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 enum Operator {
     Sum,
     Multiply,
@@ -18,9 +18,7 @@ impl Operator {
         match self {
             Self::Sum => left + right,
             Self::Multiply => left * right,
-            Self::Concat => format!("{left}{right}")
-                .parse()
-                .expect("concatenated numbers should be number"),
+            Self::Concat => left * 10usize.pow((right as f64).log10().ceil() as u32) + right,
         }
     }
 }
