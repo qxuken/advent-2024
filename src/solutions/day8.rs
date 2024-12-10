@@ -1,76 +1,61 @@
-use itertools::{repeat_n, Itertools};
+use itertools::Itertools;
 use rayon::prelude::*;
-use std::io;
+use std::{
+    collections::{HashMap, HashSet},
+    io,
+};
 
-use tracing::{instrument, Level};
+use tracing::{instrument, trace, Level};
 
-use crate::error::{AppError, Result};
+use crate::{
+    error::{AppError, Result},
+    solutions::utils::Coord,
+};
 
 pub fn solve(second: bool, line_reader: impl Iterator<Item = io::Result<String>>) -> Result<()> {
     if second {
         try_combine_numbers_with_concat(line_reader)?;
     } else {
-        try_combine_numbers(line_reader)?;
+        count_antinodes(line_reader)?;
     }
     Ok(())
 }
 
 #[instrument(skip_all, ret)]
-fn try_combine_numbers(
+fn count_antinodes(
     line_reader: impl Iterator<Item = io::Result<String>>,
 ) -> Result<usize, AppError> {
-    let Some(lines) = line_reader
-        .filter_map(Result::ok)
-        .filter_map(|s| {
-            s.split_once(':')
-                .map(|(t, nums)| (t.to_owned(), nums.trim().to_owned()))
-        })
-        .map(|(t, nums)| {
-            t.parse::<usize>().ok().zip(
-                nums.split(char::is_whitespace)
-                    .map(|n| n.parse().ok())
-                    .collect::<Option<Vec<usize>>>(),
-            )
-        })
-        .collect::<Option<Vec<(usize, Vec<usize>)>>>()
-    else {
-        return Err(AppError::DataParse("data corrupted".to_string()));
-    };
-    let operations = vec![Operator::Sum, Operator::Multiply];
-    Ok(lines
-        .into_par_iter()
-        .filter(|(target, nums)| PermutationsCalculator::can_be_solved(target, nums, &operations))
-        .map(|(t, _)| t)
-        .sum())
+    let lines = line_reader
+        .map_ok(|s| s.chars().collect())
+        .collect::<io::Result<Vec<Vec<char>>>>()
+        .map_err(|e| AppError::DataParse(e.to_string()))?;
+
+    let stations = lines.iter().enumerate().fold(
+        HashMap::<char, HashSet<Coord>>::new(),
+        |mut acc, (row_i, row)| {
+            row.iter()
+                .enumerate()
+                .filter(|(_, &ch)| ch != '.')
+                .for_each(|(col_i, ch)| {
+                    acc.entry(*ch)
+                        .and_modify(|s| {
+                            s.insert((row_i, col_i));
+                        })
+                        .or_insert(HashSet::from([(col_i, row_i)]));
+                });
+            acc
+        },
+    );
+    trace!(stations = ?stations, "Parsed");
+
+    Ok(0)
 }
 
 #[instrument(skip_all, ret)]
 fn try_combine_numbers_with_concat(
-    line_reader: impl Iterator<Item = io::Result<String>>,
+    _line_reader: impl Iterator<Item = io::Result<String>>,
 ) -> Result<usize, AppError> {
-    let Some(lines) = line_reader
-        .filter_map(Result::ok)
-        .filter_map(|s| {
-            s.split_once(':')
-                .map(|(t, nums)| (t.to_owned(), nums.trim().to_owned()))
-        })
-        .map(|(t, nums)| {
-            t.parse::<usize>().ok().zip(
-                nums.split(char::is_whitespace)
-                    .map(|n| n.parse().ok())
-                    .collect::<Option<Vec<usize>>>(),
-            )
-        })
-        .collect::<Option<Vec<(usize, Vec<usize>)>>>()
-    else {
-        return Err(AppError::DataParse("data corrupted".to_string()));
-    };
-    let operations = vec![Operator::Sum, Operator::Multiply, Operator::Concat];
-    Ok(lines
-        .into_par_iter()
-        .filter(|(target, nums)| PermutationsCalculator::can_be_solved(target, nums, &operations))
-        .map(|(t, _)| t)
-        .sum())
+    unimplemented!()
 }
 
 #[cfg(test)]
@@ -79,17 +64,20 @@ mod test {
 
     #[test]
     fn validate_one_star_example() {
-        let data = r#"190: 10 19
-                      3267: 81 40 27
-                      83: 17 5
-                      156: 15 6
-                      7290: 6 8 6 15
-                      161011: 16 10 13
-                      192: 17 8 14
-                      21037: 9 7 18 13
-                      292: 11 6 16 20"#;
-        let res = try_combine_numbers(data.lines().map(|s| s.trim().to_string()).map(Ok));
-        assert_eq!(res.unwrap(), 3749);
+        let data = r#"............
+                            ........0...
+                            .....0......
+                            .......0....
+                            ....0.......
+                            ......A.....
+                            ............
+                            ............
+                            ........A...
+                            .........A..
+                            ............
+                            ............"#;
+        let res = count_antinodes(data.lines().map(|s| s.trim().to_string()).map(Ok));
+        assert_eq!(res.unwrap(), 14);
     }
 
     #[test]

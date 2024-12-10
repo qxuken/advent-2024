@@ -11,8 +11,8 @@ use tracing_subscriber::{
 
 use super::logger::Logger;
 
-// static OUT: fn() -> std::io::Stdout = std::io::stdout;
-static OUT: fn() -> std::io::Stderr = std::io::stderr;
+static OUT: fn() -> std::io::Stdout = std::io::stdout;
+// static OUT: fn() -> std::io::Stderr = std::io::stderr;
 
 #[derive(clap::Args, Debug, Default, Clone)]
 pub struct Instrumentation {
