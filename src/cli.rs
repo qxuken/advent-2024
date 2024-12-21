@@ -41,4 +41,6 @@ pub enum Command {
     Day8,
     /// Day 9 solution [https://adventofcode.com/2024/day/9]
     Day9,
+    /// Day 10 solution [https://adventofcode.com/2024/day/10]
+    Day10,
 }
