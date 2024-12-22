@@ -7,6 +7,13 @@ use tracing::{instrument, trace};
 
 use crate::error::{AppError, Result};
 
+#[derive(Debug)]
+struct Machine {
+    a_diff: (usize, usize),
+    b_diff: (usize, usize),
+    target: (usize, usize),
+}
+
 pub fn solve(second: bool, line_reader: impl Iterator<Item = io::Result<String>>) -> Result<()> {
     if second {
         task_hard(line_reader)?;
@@ -16,17 +23,48 @@ pub fn solve(second: bool, line_reader: impl Iterator<Item = io::Result<String>>
     Ok(())
 }
 
+fn parse_line_into_usize_tuple(line: &str) -> Option<(usize, usize)> {
+    line.split_once(',').and_then(|(left, right)| {
+        left.chars()
+            .filter(char::is_ascii_digit)
+            .collect::<String>()
+            .parse()
+            .ok()
+            .zip(
+                right
+                    .chars()
+                    .filter(char::is_ascii_digit)
+                    .collect::<String>()
+                    .parse()
+                    .ok(),
+            )
+    })
+}
+
 #[instrument(skip_all, ret)]
 fn task_simple(line_reader: impl Iterator<Item = io::Result<String>>) -> Result<usize, AppError> {
-    let raw = line_reader
-        .map_ok(|s| {
-            s.chars()
-                .filter_map(|c| c.to_digit(10).map(|n| n as u8))
-                .collect::<Vec<u8>>()
+    let machines = &line_reader
+        .chunks(4)
+        .into_iter()
+        .map(|chunk| {
+            chunk
+                .filter_ok(|s| !s.is_empty())
+                .collect::<io::Result<Vec<String>>>()
         })
-        .collect::<io::Result<Vec<Vec<u8>>>>()
+        .map_ok(|lines| {
+            assert_eq!(lines.len(), 3);
+            let a_diff = parse_line_into_usize_tuple(&lines[0]).unwrap();
+            let b_diff = parse_line_into_usize_tuple(&lines[1]).unwrap();
+            let target = parse_line_into_usize_tuple(&lines[2]).unwrap();
+            Machine {
+                a_diff,
+                b_diff,
+                target,
+            }
+        })
+        .collect::<io::Result<Vec<Machine>>>()
         .map_err(|e| AppError::DataParse(e.to_string()))?;
-    trace!(raw_input = ?raw);
+    trace!(machines = ?machines, count = machines.len());
 
     Ok(0)
 }
