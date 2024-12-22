@@ -10,17 +10,8 @@ use tracing::{instrument, trace};
 
 use crate::{
     error::{AppError, Result},
-    solutions::utils::Coord,
+    solutions::utils::{Coord, SIDE_MOVES},
 };
-
-use super::utils::Direction;
-
-const MOVES: [Direction; 4] = [
-    Direction::Left,
-    Direction::Top,
-    Direction::Right,
-    Direction::Bottom,
-];
 
 pub fn solve(second: bool, line_reader: impl Iterator<Item = io::Result<String>>) -> Result<()> {
     if second {
@@ -66,7 +57,7 @@ fn trailheads_score_sum(
                     continue;
                 }
                 for new_coord in
-                    MOVES
+                    SIDE_MOVES
                         .iter()
                         .filter_map(|d| d.new_coord(coord))
                         .filter(|new_coord| {
@@ -103,39 +94,38 @@ fn trailheads_ratting_sum(
         .collect::<io::Result<Vec<Vec<u8>>>>()
         .map_err(|e| AppError::DataParse(e.to_string()))?;
     trace!(raw_blocks = ?raw_blocks);
-    let count =
-        raw_blocks
-            .par_iter()
-            .enumerate()
-            .flat_map(|(row_i, row)| {
-                row.par_iter()
-                    .enumerate()
-                    .filter(|(_col_i, &n)| n == 0)
-                    .map(|(col_i, _n)| (row_i, col_i))
-                    .collect::<Vec<Coord>>()
-            })
-            .map(|start| {
-                let mut moves = VecDeque::from([start]);
-                let mut count = 0;
-                while let Some(coord) = moves.pop_front() {
-                    let val = raw_blocks[coord.0][coord.1];
-                    trace!(move = ?coord, val = raw_blocks[coord.0][coord.1]);
-                    if val == 9 {
-                        count += 1;
-                        continue;
-                    }
-                    moves.extend(MOVES.iter().filter_map(|d| d.new_coord(coord)).filter(
-                        |new_coord| {
-                            raw_blocks
-                                .get(new_coord.0)
-                                .and_then(|r| r.get(new_coord.1))
-                                .is_some_and(|&v| v == val + 1)
-                        },
-                    ));
+    let count = raw_blocks
+        .par_iter()
+        .enumerate()
+        .flat_map(|(row_i, row)| {
+            row.par_iter()
+                .enumerate()
+                .filter(|(_col_i, &n)| n == 0)
+                .map(|(col_i, _n)| (row_i, col_i))
+                .collect::<Vec<Coord>>()
+        })
+        .map(|start| {
+            let mut moves = VecDeque::from([start]);
+            let mut count = 0;
+            while let Some(coord) = moves.pop_front() {
+                let val = raw_blocks[coord.0][coord.1];
+                trace!(move = ?coord, val = raw_blocks[coord.0][coord.1]);
+                if val == 9 {
+                    count += 1;
+                    continue;
                 }
-                count
-            })
-            .sum();
+                moves.extend(SIDE_MOVES.iter().filter_map(|d| d.new_coord(coord)).filter(
+                    |new_coord| {
+                        raw_blocks
+                            .get(new_coord.0)
+                            .and_then(|r| r.get(new_coord.1))
+                            .is_some_and(|&v| v == val + 1)
+                    },
+                ));
+            }
+            count
+        })
+        .sum();
 
     Ok(count)
 }

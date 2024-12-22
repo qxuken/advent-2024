@@ -15,6 +15,13 @@ pub enum Direction {
     BottomRight = 7,
 }
 
+pub const SIDE_MOVES: [Direction; 4] = [
+    Direction::Left,
+    Direction::Top,
+    Direction::Right,
+    Direction::Bottom,
+];
+
 impl Direction {
     pub fn new_coord(&self, (row, col): Coord) -> Option<Coord> {
         match self {
