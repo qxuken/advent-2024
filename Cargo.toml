@@ -1,19 +1,20 @@
 [package]
-name        = "advent_2024"
-version     = "0.1.0"
-edition     = "2021"
+name = "advent_2024"
+version = "0.1.0"
+edition = "2021"
 default-run = "advent_2024"
 
 [dependencies]
-clap               = { version = "4.5.21",  features = ["derive",     "cargo"] }
-color-eyre         = { version = "0.6.3",   features = ["issue-url",  "url"] }
-serde              = { version = "1.0.215", features = ["derive"] }
-thiserror          = { version = "2.0.3" }
-tracing            = { version = "0.1.41",  features = ["log"] }
-tracing-error      = { version = "0.2.1" }
-tracing-subscriber = { version = "0.3.19",  features = ["env-filter", "json"] }
+clap = { version = "4.5.21", features = ["derive", "cargo"] }
+color-eyre = { version = "0.6.3", features = ["issue-url", "url"] }
+serde = { version = "1.0.215", features = ["derive"] }
+thiserror = { version = "2.0.3" }
+tracing = { version = "0.1.41", features = ["log"] }
+tracing-error = { version = "0.2.1" }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
 
-ctor               = { version = "0.2.9" }
-itertools          = { version = "0.13.0" }
-rayon              = { version = "1.10.0" }
-strum              = { version = "0.26.3",  features = ["derive"] }
+ctor = { version = "0.2.9" }
+itertools = { version = "0.13.0" }
+rayon = { version = "1.10.0" }
+strum = { version = "0.26.3", features = ["derive"] }
+cached = { version = "0.54.0" }
