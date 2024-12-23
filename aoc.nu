@@ -1,7 +1,13 @@
 use std log
+use std assert
 
 def log_levels [] { ["t", "trace", "d", "debug", "i", "info"] }
-def available_days [] { ls src/solutions | select name | each {|r| $r.name | parse --regex '(\d+)' |  get capture0 } | flatten }
+def available_days [] {
+    ls src/solutions
+    | select name
+    | each {|r| $r.name | parse --regex '(\d+)' |  get capture0 }
+    | flatten
+}
 
 # Test aoc given day task
 export def test [
