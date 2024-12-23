@@ -1,4 +1,4 @@
-use std::{io, mem};
+use std::io;
 
 use itertools::Itertools;
 use rayon::prelude::*;
@@ -18,71 +18,27 @@ struct Machine {
 
 impl Machine {
     #[instrument(ret(level = Level::DEBUG))]
-    fn min_tokens(&self, max_presses: usize) -> Option<usize> {
-        let mut cheap = self.b_diff;
-        let mut costy = self.a_diff;
-        let reversed = (self.a_diff.0 + self.a_diff.1) / (self.b_diff.0 + self.b_diff.1) >= 3;
-        if reversed {
-            mem::swap(&mut cheap, &mut costy);
-        }
-        let mut presses = (
-            (self.target.0 / cheap.0)
-                .min(self.target.1 / cheap.1)
-                .min(max_presses),
-            0,
-        );
-        let x_coord = |presses: &(usize, usize)| presses.0 * cheap.0 + presses.1 * costy.0;
-        let y_coord = |presses: &(usize, usize)| presses.0 * cheap.1 + presses.1 * costy.1;
-        let mut curr_target = (x_coord(&presses), y_coord(&presses));
-        trace!(
-            reversed,
-            ?presses,
-            ?curr_target,
-            x_coord = x_coord(&presses),
-            y_coord = y_coord(&presses)
-        );
-        presses.1 = ((self.target.0 - curr_target.0) / costy.0)
-            .min((self.target.1 - curr_target.1) / costy.1)
-            .min(max_presses);
-        curr_target.0 += costy.0 * presses.1;
-        curr_target.1 += costy.1 * presses.1;
-        trace!(
-            reversed,
-            ?presses,
-            ?curr_target,
-            x_coord = x_coord(&presses),
-            y_coord = y_coord(&presses)
-        );
-        while presses.0 > 0 && curr_target != self.target {
-            // trace!(
-            //     ?presses,
-            //     ?curr_target,
-            //     sub_x = cheap.0 + costy.0 * presses.1,
-            //     sub_y = cheap.1 + costy.1 * presses.1,
-            // );
-            presses.0 -= 1;
-            curr_target.0 -= cheap.0 + costy.0 * presses.1;
-            curr_target.1 -= cheap.1 + costy.1 * presses.1;
+    fn min_tokens(&self) -> Option<usize> {
+        // px = i*ax + j*bx
+        // py = i*ay + j*by
+        //
+        // A = ⌈ax bx⌉  X = ⌈i⌉  AX = C = ⌈px⌉
+        //     ⌊ay by⌋      ⌊j⌋           ⌊py⌋
+        //
+        // D = |A| = ax*by - ay*bx
+        // Di = px*by - py*bx
+        // Dj = py*ax - px*ay
+        //
+        // i = Di / D
+        // j = Dj / D
+        // answer = 3*i + j
+        // c: https://github.com/ndunnett/aoc/blob/d669668c310971c675e650528f0d747571a2de23/rust/2024/src/bin/day13.rs#L41
+        let d = (self.a_diff.0 * self.b_diff.1) as i64 - (self.a_diff.1 * self.b_diff.0) as i64;
+        let di = (self.target.0 * self.b_diff.1) as i64 - (self.target.1 * self.b_diff.0) as i64;
+        let dj = (self.target.1 * self.a_diff.0) as i64 - (self.target.0 * self.a_diff.1) as i64;
 
-            presses.1 = ((self.target.0 - curr_target.0) / costy.0)
-                .min((self.target.1 - curr_target.1) / costy.1)
-                .min(max_presses);
-            curr_target.0 += costy.0 * presses.1;
-            curr_target.1 += costy.1 * presses.1;
-        }
-        trace!(
-            reversed,
-            ?presses,
-            ?curr_target,
-            x_coord = x_coord(&presses),
-            y_coord = y_coord(&presses)
-        );
-        if curr_target == self.target {
-            if reversed {
-                Some(presses.0 * 3 + presses.1)
-            } else {
-                Some(presses.0 + presses.1 * 3)
-            }
+        if di % d == 0 && dj % d == 0 {
+            Some((3 * di / d + dj / d) as usize)
         } else {
             None
         }
@@ -148,10 +104,10 @@ fn task_simple(line_reader: impl Iterator<Item = io::Result<String>>) -> Result<
         .map_err(|e| AppError::DataParse(e.to_string()))?;
     trace!(machines = ?machines, count = machines.len());
 
-    let mut sum = 0;
-    for machine in machines {
-        sum += machine.min_tokens(100).unwrap_or_default();
-    }
+    let sum = machines
+        .into_par_iter()
+        .filter_map(Machine::min_tokens)
+        .sum();
 
     Ok(sum)
 }
@@ -184,7 +140,7 @@ fn task_hard(line_reader: impl Iterator<Item = io::Result<String>>) -> Result<us
 
     let sum = machines
         .into_par_iter()
-        .filter_map(|m| m.min_tokens(usize::MAX))
+        .filter_map(Machine::min_tokens)
         .sum();
 
     Ok(sum)
@@ -224,24 +180,24 @@ mod test {
         assert_eq!(res.unwrap(), 59);
     }
 
-    // #[test]
-    // fn validate_second_star_example() {
-    //     let data = r#"Button A: X+94, Y+34
-    //                   Button B: X+22, Y+67
-    //                   Prize: X=8400, Y=5400
-    //
-    //                   Button A: X+26, Y+66
-    //                   Button B: X+67, Y+21
-    //                   Prize: X=12748, Y=12176
-    //
-    //                   Button A: X+17, Y+86
-    //                   Button B: X+84, Y+37
-    //                   Prize: X=7870, Y=6450
-    //
-    //                   Button A: X+69, Y+23
-    //                   Button B: X+27, Y+71
-    //                   Prize: X=18641, Y=10279"#;
-    //     let res = task_hard(data.lines().map(|s| s.trim().to_string()).map(Ok));
-    //     assert_eq!(res.unwrap(), 0);
-    // }
+    #[test]
+    fn validate_second_star_example() {
+        let data = r#"Button A: X+94, Y+34
+                      Button B: X+22, Y+67
+                      Prize: X=8400, Y=5400
+
+                      Button A: X+26, Y+66
+                      Button B: X+67, Y+21
+                      Prize: X=12748, Y=12176
+
+                      Button A: X+17, Y+86
+                      Button B: X+84, Y+37
+                      Prize: X=7870, Y=6450
+
+                      Button A: X+69, Y+23
+                      Button B: X+27, Y+71
+                      Prize: X=18641, Y=10279"#;
+        let res = task_hard(data.lines().map(|s| s.trim().to_string()).map(Ok));
+        assert_eq!(res.unwrap(), 875318608908);
+    }
 }
